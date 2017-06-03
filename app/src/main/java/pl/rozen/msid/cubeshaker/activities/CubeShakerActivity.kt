@@ -22,9 +22,12 @@ import android.view.ViewGroup
 
 import android.widget.TextView
 import android.widget.Toast
+import kotlinx.android.synthetic.main.fragment_cube_shaker.*
+import org.jetbrains.anko.textResource
 
 import pl.rozen.msid.cubeshaker.R
 import pl.rozen.msid.cubeshaker.listeners.ShakeEventListener
+import java.util.*
 
 class CubeShakerActivity : AppCompatActivity() {
 
@@ -50,12 +53,12 @@ class CubeShakerActivity : AppCompatActivity() {
      * may be best to switch to a
      * [android.support.v4.app.FragmentStatePagerAdapter].
      */
-    private var mSectionsPagerAdapter: SectionsPagerAdapter? = null
+    private lateinit var mSectionsPagerAdapter: SectionsPagerAdapter
 
     /**
      * The [ViewPager] that will host the section contents.
      */
-    private var mViewPager: ViewPager? = null
+    private lateinit var mViewPager: ViewPager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,7 +87,18 @@ class CubeShakerActivity : AppCompatActivity() {
         // ShakeDetector initialization
         mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        mShakeDetector = ShakeEventListener(ShakeEventListener.OnShakeListener { Toast.makeText(applicationContext, "SHAAAAAKE!!!!", Toast.LENGTH_SHORT).show() })
+        mShakeDetector = ShakeEventListener(ShakeEventListener.OnShakeListener {
+
+            val currentItemPosition = mViewPager.currentItem
+            if (currentItemPosition > 0) {
+                val currentFragment: RandomFragment = mSectionsPagerAdapter.getItem(currentItemPosition) as RandomFragment
+                currentFragment.update()
+                // TODO FIX THIS
+                TODO("FIX THIS SHIT")
+
+            }
+//            Toast.makeText(applicationContext, "SHAAAAAKE!!!!", Toast.LENGTH_SHORT).show()
+        })
     }
 
 
@@ -151,12 +165,25 @@ class CubeShakerActivity : AppCompatActivity() {
 
     class RandomFragment : Fragment() {
 
+        val random = Random()
+        var sides: Int = 6
+
         override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
                                   savedInstanceState: Bundle?): View? {
             val rootView = inflater!!.inflate(R.layout.fragment_cube_shaker, container, false)
             val textView = rootView.findViewById(R.id.section_label) as TextView
-            textView.text = getString(R.string.section_format, arguments.getInt(ARG_SECTION_NUMBER))
+            sides = arguments.getInt(ARG_SECTION_NUMBER)
+            textView.text = getString(R.string.section_format, sides)
+//            random_result.visibility = View.GONE
             return rootView
+        }
+
+        private fun toss() = random.nextInt(sides)
+
+        fun update() {
+            val nextResult = toss()
+            random_result.text = nextResult.toString()
+            random_result.visibility = View.VISIBLE
         }
 
         companion object {
@@ -207,7 +234,7 @@ class CubeShakerActivity : AppCompatActivity() {
         }
 
         override fun getPageTitle(position: Int): CharSequence? {
-            val toReturn = when (position) {
+            val strId = when (position) {
                 0 -> HISTORY.second
                 1 -> CUBE_SIX.second
                 2 -> COIN.second
@@ -217,18 +244,18 @@ class CubeShakerActivity : AppCompatActivity() {
                 6 -> CUBE_TWENTY.second
                 else -> CUBE_SIX.second
             }
-            return toReturn
+            return resources.getString(strId)
         }
     }
 
     companion object {
-        val HISTORY = Pair(0, "History")
-        val CUBE_SIX = Pair(6, "6 sides cube")
-        val COIN = Pair(2, "Coin")
-        val CUBE_TEN = Pair(10, "10 sides cube")
-        val CUBE_TWELVE = Pair(12, "12 sides cube")
-        val CUBE_SIXTEEN = Pair(16, "16 sides cube")
-        val CUBE_TWENTY = Pair(20, "20 sides cube")
+        val HISTORY = Pair(0, R.string.history_title)
+        val CUBE_SIX = Pair(6, R.string.cube_6_title)
+        val COIN = Pair(2, R.string.coin_title)
+        val CUBE_TEN = Pair(10, R.string.cube_10_title)
+        val CUBE_TWELVE = Pair(12, R.string.cube_12_title)
+        val CUBE_SIXTEEN = Pair(16, R.string.cube_16_title)
+        val CUBE_TWENTY = Pair(20, R.string.cube_20_title)
 
         val ITEM_COUNT = 7
     }

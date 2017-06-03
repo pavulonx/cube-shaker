@@ -97,6 +97,8 @@ public class ShakeEventListener implements SensorEventListener {
         }
     }
 
+    // TODO: FIX THIS
+
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // Intentionally blank

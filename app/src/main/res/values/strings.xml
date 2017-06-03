@@ -4,4 +4,11 @@
     <string name="section_format">Number of possible results: %1$d</string>
     <string name="action_about">About</string>
     <string name="action_history">History</string>
+    <string name="history_title">History</string>
+    <string name="cube_6_title">6 sides cube</string>
+    <string name="coin_title">Coin</string>
+    <string name="cube_10_title">10 sides cube</string>
+    <string name="cube_12_title">12 sides cube</string>
+    <string name="cube_16_title">16 sides cube</string>
+    <string name="cube_20_title">20 sides cube</string>
 </resources>
