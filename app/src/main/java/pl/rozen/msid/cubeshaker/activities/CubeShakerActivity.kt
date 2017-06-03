@@ -69,7 +69,7 @@ class CubeShakerActivity : AppCompatActivity() {
 
         // Set up the ViewPager with the sections adapter.
         mViewPager = findViewById(R.id.container) as ViewPager
-        mViewPager!!.adapter = mSectionsPagerAdapter
+        mViewPager?.adapter = mSectionsPagerAdapter
 
         val tabLayout = findViewById(R.id.tabs) as TabLayout
         tabLayout.setupWithViewPager(mViewPager)
@@ -98,20 +98,58 @@ class CubeShakerActivity : AppCompatActivity() {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        val id = item.itemId
 
+        when (item.itemId) {
+            R.id.action_history -> {
+                mViewPager?.setCurrentItem(HISTORY.first, true)
+                return true
+            }
+            R.id.action_about -> {
+                return true
+            }
+            R.id.action_settings -> {
+                return true
+            }
+            else -> return super.onOptionsItemSelected(item)
 
-        if (id == R.id.action_settings) {
-            return true
         }
-
-        return super.onOptionsItemSelected(item)
     }
 
     /**
      * A placeholder fragment containing a simple view.
      */
-    class PlaceholderFragment : Fragment() {
+    class HistoryFragment : Fragment() {
+
+        override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
+                                  savedInstanceState: Bundle?): View? {
+            val rootView = inflater!!.inflate(R.layout.fragment_cube_shaker, container, false)
+            val textView = rootView.findViewById(R.id.section_label) as TextView
+//            textView.text = getString(R.string.section_format, arguments.getInt(ARG_SECTION_NUMBER))
+            return rootView
+        }
+
+        companion object {
+            /**
+             * The fragment argument representing the section number for this
+             * fragment.
+             */
+            private val ARG_SECTION_NUMBER = "section_number"
+
+            /**
+             * Returns a new instance of this fragment for the given section
+             * number.
+             */
+            fun newInstance(sectionNumber: Int): HistoryFragment {
+                val fragment = HistoryFragment()
+                val args = Bundle()
+                args.putInt(ARG_SECTION_NUMBER, sectionNumber)
+                fragment.arguments = args
+                return fragment
+            }
+        }
+    }
+
+    class RandomFragment : Fragment() {
 
         override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
                                   savedInstanceState: Bundle?): View? {
@@ -132,8 +170,8 @@ class CubeShakerActivity : AppCompatActivity() {
              * Returns a new instance of this fragment for the given section
              * number.
              */
-            fun newInstance(sectionNumber: Int): PlaceholderFragment {
-                val fragment = PlaceholderFragment()
+            fun newInstance(sectionNumber: Int): RandomFragment {
+                val fragment = RandomFragment()
                 val args = Bundle()
                 args.putInt(ARG_SECTION_NUMBER, sectionNumber)
                 fragment.arguments = args
@@ -150,22 +188,48 @@ class CubeShakerActivity : AppCompatActivity() {
 
         override fun getItem(position: Int): Fragment {
             // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(position + 1)
+            // Return a RandomFragment (defined as a static inner class below).
+            val toReturn: Fragment = when (position) {
+                0 -> HistoryFragment.newInstance(position + 1)
+                1 -> RandomFragment.newInstance(CUBE_SIX.first)
+                2 -> RandomFragment.newInstance(COIN.first)
+                3 -> RandomFragment.newInstance(CUBE_TEN.first)
+                4 -> RandomFragment.newInstance(CUBE_TWELVE.first)
+                5 -> RandomFragment.newInstance(CUBE_SIXTEEN.first)
+                6 -> RandomFragment.newInstance(CUBE_TWENTY.first)
+                else -> RandomFragment.newInstance(CUBE_SIX.first)
+            }
+            return toReturn
         }
 
         override fun getCount(): Int {
-            // Show 3 total pages.
-            return 3
+            return ITEM_COUNT
         }
 
         override fun getPageTitle(position: Int): CharSequence? {
-            when (position) {
-                0 -> return "SECTION 1"
-                1 -> return "SECTION 2"
-                2 -> return "SECTION 3"
+            val toReturn = when (position) {
+                0 -> HISTORY.second
+                1 -> CUBE_SIX.second
+                2 -> COIN.second
+                3 -> CUBE_TEN.second
+                4 -> CUBE_TWELVE.second
+                5 -> CUBE_SIXTEEN.second
+                6 -> CUBE_TWENTY.second
+                else -> CUBE_SIX.second
             }
-            return null
+            return toReturn
         }
+    }
+
+    companion object {
+        val HISTORY = Pair(0, "History")
+        val CUBE_SIX = Pair(6, "6 sides cube")
+        val COIN = Pair(2, "Coin")
+        val CUBE_TEN = Pair(10, "10 sides cube")
+        val CUBE_TWELVE = Pair(12, "12 sides cube")
+        val CUBE_SIXTEEN = Pair(16, "16 sides cube")
+        val CUBE_TWENTY = Pair(20, "20 sides cube")
+
+        val ITEM_COUNT = 7
     }
 }
