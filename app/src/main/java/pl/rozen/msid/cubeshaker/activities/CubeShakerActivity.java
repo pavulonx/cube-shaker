@@ -1,5 +1,8 @@
-package pl.rozen.msid.cubeshaker;
+package pl.rozen.msid.cubeshaker.activities;
 
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.support.design.widget.TabLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -18,8 +21,29 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import android.widget.TextView;
+import android.widget.Toast;
+
+import pl.rozen.msid.cubeshaker.R;
+import pl.rozen.msid.cubeshaker.listeners.ShakeEventListener;
 
 public class CubeShakerActivity extends AppCompatActivity {
+
+    private ShakeEventListener mShakeDetector;
+    private SensorManager mSensorManager;
+    private Sensor mAccelerometer;
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mSensorManager.registerListener(mShakeDetector, mAccelerometer, SensorManager.SENSOR_DELAY_UI);
+    }
+
+    @Override
+    protected void onPause() {
+        mSensorManager.unregisterListener(mShakeDetector);
+        super.onPause();
+    }
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -63,6 +87,16 @@ public class CubeShakerActivity extends AppCompatActivity {
             }
         });
 
+
+        // ShakeDetector initialization
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mShakeDetector = new ShakeEventListener(new ShakeEventListener.OnShakeListener() {
+            @Override
+            public void onShake() {
+                Toast.makeText(getApplicationContext(), "SHAAAAAKE!!!!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 
