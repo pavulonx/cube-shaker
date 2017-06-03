@@ -154,6 +154,6 @@ public class ShakeEventListener implements SensorEventListener {
 
     // (I'd normally put this definition in it's own .java file)
     public interface OnShakeListener {
-        public void onShake();
+        void onShake();
     }
 }
