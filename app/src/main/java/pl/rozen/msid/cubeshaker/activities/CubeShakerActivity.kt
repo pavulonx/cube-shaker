@@ -1,8 +1,7 @@
 package pl.rozen.msid.cubeshaker.activities
 
 import android.content.Context
-import android.hardware.Sensor
-import android.hardware.SensorManager
+import android.graphics.Color
 import android.support.design.widget.TabLayout
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
@@ -14,6 +13,8 @@ import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.view.ViewPager
 import android.os.Bundle
+import android.os.Vibrator
+import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -21,28 +22,26 @@ import android.view.View
 import android.view.ViewGroup
 
 import android.widget.TextView
-import android.widget.Toast
 import kotlinx.android.synthetic.main.fragment_cube_shaker.*
-import org.jetbrains.anko.textResource
 
 import pl.rozen.msid.cubeshaker.R
-import pl.rozen.msid.cubeshaker.listeners.ShakeEventListener
+import pl.rozen.msid.cubeshaker.listeners.ShakeEventManager
 import java.util.*
+import kotlin.collections.RandomAccess
 
-class CubeShakerActivity : AppCompatActivity() {
+class CubeShakerActivity : AppCompatActivity(), ShakeEventManager.ShakeListener {
 
-    lateinit private var mShakeDetector: ShakeEventListener
-    lateinit private var mSensorManager: SensorManager
-    lateinit private var mAccelerometer: Sensor
+    private lateinit var sd: ShakeEventManager
+    private lateinit var vibrator: Vibrator
 
     override fun onResume() {
         super.onResume()
-        mSensorManager.registerListener(mShakeDetector, mAccelerometer, SensorManager.SENSOR_DELAY_UI)
+        sd.register()
     }
 
     override fun onPause() {
-        mSensorManager.unregisterListener(mShakeDetector)
         super.onPause()
+        sd.deregister()
     }
 
     /**
@@ -72,7 +71,7 @@ class CubeShakerActivity : AppCompatActivity() {
 
         // Set up the ViewPager with the sections adapter.
         mViewPager = findViewById(R.id.container) as ViewPager
-        mViewPager?.adapter = mSectionsPagerAdapter
+        mViewPager.adapter = mSectionsPagerAdapter
 
         val tabLayout = findViewById(R.id.tabs) as TabLayout
         tabLayout.setupWithViewPager(mViewPager)
@@ -83,39 +82,33 @@ class CubeShakerActivity : AppCompatActivity() {
                     .setAction("Action", null).show()
         }
 
+        sd = ShakeEventManager()
+        sd.setListener(this)
+        sd.init(this)
 
-        // ShakeDetector initialization
-        mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        mShakeDetector = ShakeEventListener(ShakeEventListener.OnShakeListener {
-
-            val currentItemPosition = mViewPager.currentItem
-            if (currentItemPosition > 0) {
-                val currentFragment: RandomFragment = mSectionsPagerAdapter.getItem(currentItemPosition) as RandomFragment
-                currentFragment.update()
-                // TODO FIX THIS
-                TODO("FIX THIS SHIT")
-
-            }
-//            Toast.makeText(applicationContext, "SHAAAAAKE!!!!", Toast.LENGTH_SHORT).show()
-        })
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
 
+    override fun onShake() {
+        val currentItemPosition = mViewPager.currentItem
+        val currentFragment: Fragment = mSectionsPagerAdapter.getRegisteredFragment(currentItemPosition)
+        if (currentFragment is RandomMachineFragment) {
+            val currentRandomFragment: RandomMachineFragment = currentFragment as RandomMachineFragment
+            currentRandomFragment.update()
+            vibrator.vibrate(100)
+        }
+
+    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_cube_shaker, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-
         when (item.itemId) {
             R.id.action_history -> {
-                mViewPager?.setCurrentItem(HISTORY.first, true)
+                mViewPager.setCurrentItem(HISTORY.first, true)
                 return true
             }
             R.id.action_about -> {
@@ -125,7 +118,6 @@ class CubeShakerActivity : AppCompatActivity() {
                 return true
             }
             else -> return super.onOptionsItemSelected(item)
-
         }
     }
 
@@ -136,10 +128,7 @@ class CubeShakerActivity : AppCompatActivity() {
 
         override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
                                   savedInstanceState: Bundle?): View? {
-            val rootView = inflater!!.inflate(R.layout.fragment_cube_shaker, container, false)
-            val textView = rootView.findViewById(R.id.section_label) as TextView
-//            textView.text = getString(R.string.section_format, arguments.getInt(ARG_SECTION_NUMBER))
-            return rootView
+            return LayoutInflater.from(context).inflate(R.layout.fragment_history, container, false)
         }
 
         companion object {
@@ -163,26 +152,32 @@ class CubeShakerActivity : AppCompatActivity() {
         }
     }
 
-    class RandomFragment : Fragment() {
+    class CubeFragment : Fragment(), RandomMachineFragment {
 
         val random = Random()
         var sides: Int = 6
+        lateinit var tv: TextView
+        val colors: List<Int> = listOf(Color.BLUE, Color.CYAN, Color.BLACK, Color.DKGRAY, Color.GREEN, Color.MAGENTA, Color.RED)
 
         override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
                                   savedInstanceState: Bundle?): View? {
-            val rootView = inflater!!.inflate(R.layout.fragment_cube_shaker, container, false)
-            val textView = rootView.findViewById(R.id.section_label) as TextView
-            sides = arguments.getInt(ARG_SECTION_NUMBER)
-            textView.text = getString(R.string.section_format, sides)
-//            random_result.visibility = View.GONE
-            return rootView
+            return LayoutInflater.from(context).inflate(R.layout.fragment_cube_shaker, container, false)
         }
 
-        private fun toss() = random.nextInt(sides)
+        override fun onActivityCreated(savedInstanceState: Bundle?) {
+            super.onActivityCreated(savedInstanceState)
+            sides = arguments.getInt(ARG_SECTION_NUMBER)
+            section_label.text = getString(R.string.section_format, sides)
+            random_result.visibility = View.GONE
+        }
 
-        fun update() {
+        private fun toss() = random.nextInt(sides) + 1
+        private fun randomColor() = colors[random.nextInt(colors.size)]
+
+        override fun update() {
             val nextResult = toss()
             random_result.text = nextResult.toString()
+            random_result.setTextColor(randomColor())
             random_result.visibility = View.VISIBLE
         }
 
@@ -197,8 +192,8 @@ class CubeShakerActivity : AppCompatActivity() {
              * Returns a new instance of this fragment for the given section
              * number.
              */
-            fun newInstance(sectionNumber: Int): RandomFragment {
-                val fragment = RandomFragment()
+            fun newInstance(sectionNumber: Int): CubeFragment {
+                val fragment = CubeFragment()
                 val args = Bundle()
                 args.putInt(ARG_SECTION_NUMBER, sectionNumber)
                 fragment.arguments = args
@@ -207,24 +202,80 @@ class CubeShakerActivity : AppCompatActivity() {
         }
     }
 
+    class CoinFragment : Fragment(), RandomMachineFragment {
+
+        val random = Random()
+        var sides: Int = 6
+        lateinit var tv: TextView
+        val colors: List<Int> = listOf(Color.BLUE, Color.CYAN, Color.BLACK, Color.DKGRAY, Color.GREEN, Color.MAGENTA, Color.RED)
+
+        override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
+                                  savedInstanceState: Bundle?): View? {
+            return LayoutInflater.from(context).inflate(R.layout.fragment_cube_shaker, container, false)
+        }
+
+        override fun onActivityCreated(savedInstanceState: Bundle?) {
+            super.onActivityCreated(savedInstanceState)
+            sides = arguments.getInt(ARG_SECTION_NUMBER)
+            section_label.text = getString(R.string.section_format, sides)
+            random_result.visibility = View.GONE
+        }
+
+        private fun toss() = random.nextInt(sides) + 1
+        private fun randomColor() = colors[random.nextInt(colors.size)]
+
+        override fun update() {
+            val nextResult = toss()
+            random_result.text = nextResult.toString()
+            random_result.setTextColor(randomColor())
+            random_result.visibility = View.VISIBLE
+        }
+
+        companion object {
+            /**
+             * The fragment argument representing the section number for this
+             * fragment.
+             */
+            private val ARG_SECTION_NUMBER = "section_number"
+
+            /**
+             * Returns a new instance of this fragment for the given section
+             * number.
+             */
+            fun newInstance(sectionNumber: Int): CoinFragment {
+                val fragment = CoinFragment()
+                val args = Bundle()
+                args.putInt(ARG_SECTION_NUMBER, sectionNumber)
+                fragment.arguments = args
+                return fragment
+            }
+        }
+    }
+
+    interface RandomMachineFragment {
+        fun update();
+    }
+
     /**
      * A [FragmentPagerAdapter] that returns a fragment corresponding to
      * one of the sections/tabs/pages.
      */
     inner class SectionsPagerAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
 
+        val registeredFragments: SparseArray<Fragment> = SparseArray<Fragment>()
+
         override fun getItem(position: Int): Fragment {
-            // getItem is called to instantiate the fragment for the given page.
-            // Return a RandomFragment (defined as a static inner class below).
+            /* getItem is called to instantiate the fragment for the given page.
+             Return a CubeFragment (defined as a static inner class below).*/
             val toReturn: Fragment = when (position) {
                 0 -> HistoryFragment.newInstance(position + 1)
-                1 -> RandomFragment.newInstance(CUBE_SIX.first)
-                2 -> RandomFragment.newInstance(COIN.first)
-                3 -> RandomFragment.newInstance(CUBE_TEN.first)
-                4 -> RandomFragment.newInstance(CUBE_TWELVE.first)
-                5 -> RandomFragment.newInstance(CUBE_SIXTEEN.first)
-                6 -> RandomFragment.newInstance(CUBE_TWENTY.first)
-                else -> RandomFragment.newInstance(CUBE_SIX.first)
+                1 -> CubeFragment.newInstance(CUBE_SIX.first)
+                2 -> CoinFragment.newInstance(COIN.first)
+                3 -> CubeFragment.newInstance(CUBE_TEN.first)
+                4 -> CubeFragment.newInstance(CUBE_TWELVE.first)
+                5 -> CubeFragment.newInstance(CUBE_SIXTEEN.first)
+                6 -> CubeFragment.newInstance(CUBE_TWENTY.first)
+                else -> CubeFragment.newInstance(CUBE_SIX.first)
             }
             return toReturn
         }
@@ -245,6 +296,16 @@ class CubeShakerActivity : AppCompatActivity() {
                 else -> CUBE_SIX.second
             }
             return resources.getString(strId)
+        }
+
+        override fun instantiateItem(container: ViewGroup?, position: Int): Any {
+            val fragment: Fragment = super.instantiateItem(container, position) as Fragment
+            registeredFragments.put(position, fragment)
+            return fragment
+        }
+
+        fun getRegisteredFragment(position: Int): Fragment {
+            return registeredFragments.get(position)
         }
     }
 
