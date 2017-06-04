@@ -11,4 +11,7 @@
     <string name="cube_12_title">12 sides cube</string>
     <string name="cube_16_title">16 sides cube</string>
     <string name="cube_20_title">20 sides cube</string>
+    <string name="description_cube">%1$d sides cube</string>
+    <string name="history_cleared_info">History has been cleared</string>
+    <string name="history_cleared_undo">Undo</string>
 </resources>

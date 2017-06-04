@@ -14,15 +14,17 @@ public class ShakeEventManager implements SensorEventListener {
 
 
     private static final int MOV_COUNTS = 2;
-    private static final int MOV_THRESHOLD = 4;
+    private static final int MOV_THRESHOLD = 3;
     private static final float ALPHA = 0.8F;
-    private static final int SHAKE_WINDOW_TIME_INTERVAL = 200; // milliseconds
+    private static final int SHAKE_WINDOW_TIME_INTERVAL = 400; // milliseconds
+    private static final long PAUSE = 800L; // milliseconds of pause between shakes
 
     // Gravity force on x,y,z axis
     private float gravity[] = new float[3];
 
     private int counter;
     private long firstMovTime;
+    private long pauseStartTime;
     private ShakeListener listener;
 
     public ShakeEventManager() {
@@ -44,6 +46,8 @@ public class ShakeEventManager implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+        if (pauseStartTime + PAUSE > System.currentTimeMillis())
+            return;
         float maxAcc = calcMaxAcceleration(sensorEvent);
         Log.d("SwA", "Max Acc [" + maxAcc + "]");
         if (maxAcc >= MOV_THRESHOLD) {
@@ -61,13 +65,14 @@ public class ShakeEventManager implements SensorEventListener {
                     return;
                 }
                 Log.d("SwA", "Mov counter [" + counter + "]");
-
-                if (counter >= MOV_COUNTS)
-                    if (listener != null)
-                        listener.onShake();
             }
+        } else if (counter >= MOV_COUNTS) {
+            if (listener != null)
+                listener.onShake();
+            resetAllData();
+            pauseStartTime = System.currentTimeMillis();
+            Log.d("SwA", "Pause start: " + PAUSE);
         }
-
     }
 
     @Override
