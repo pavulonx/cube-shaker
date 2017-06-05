@@ -1,6 +1,5 @@
 package pl.rozen.msid.cubeshaker.fragments
 
-import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -16,10 +15,6 @@ import org.jetbrains.anko.imageResource
 import pl.rozen.msid.cubeshaker.R
 import pl.rozen.msid.cubeshaker.activities.CubeShakerActivity
 import java.util.*
-import android.view.animation.Animation
-import android.view.animation.Animation.AnimationListener
-import android.view.animation.AnimationUtils
-import android.widget.ImageView
 
 
 class HistoryFragment : Fragment() {
@@ -98,6 +93,10 @@ class CubeFragment : Fragment(), RandomMachineFragment {
     }
 
     companion object {
+        /**
+         * The fragment argument representing the section number for this
+         * fragment.
+         */
         private val ARG_SECTION_NUMBER = "section_number"
 
         fun newInstance(sectionNumber: Int): CubeFragment {
@@ -136,9 +135,8 @@ class CoinFragment : Fragment(), RandomMachineFragment {
         val nextResult = toss()
         val result = if (nextResult) getString(R.string.coin_head_label) else getString(R.string.coin_tail_label)
         val imageRes = if (nextResult) R.drawable.coin_head else R.drawable.coin_tail
-//        coin_iv.imageResource = imageRes
+        coin_iv.imageResource = imageRes
         coin_iv.visibility = View.VISIBLE
-        imageViewAnimatedChange(this.context, coin_iv, imageRes)
         return result
     }
 
@@ -158,24 +156,6 @@ class CoinFragment : Fragment(), RandomMachineFragment {
         }
     }
 
-    fun imageViewAnimatedChange(c: Context, v: ImageView, newImageRes: Int) {
-        val anim_out = AnimationUtils.loadAnimation(c, android.R.anim.fade_out)
-        val anim_in = AnimationUtils.loadAnimation(c, android.R.anim.fade_in)
-        anim_out.setAnimationListener(object : AnimationListener {
-            override fun onAnimationStart(animation: Animation) {}
-            override fun onAnimationRepeat(animation: Animation) {}
-            override fun onAnimationEnd(animation: Animation) {
-                v.imageResource = newImageRes
-                anim_in.setAnimationListener(object : AnimationListener {
-                    override fun onAnimationStart(animation: Animation) {}
-                    override fun onAnimationRepeat(animation: Animation) {}
-                    override fun onAnimationEnd(animation: Animation) {}
-                })
-                v.startAnimation(anim_in)
-            }
-        })
-        v.startAnimation(anim_out)
-    }
 }
 
 interface RandomMachineFragment {
