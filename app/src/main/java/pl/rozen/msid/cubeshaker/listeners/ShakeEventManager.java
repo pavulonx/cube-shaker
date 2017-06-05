@@ -13,8 +13,8 @@ public class ShakeEventManager implements SensorEventListener {
     private Sensor s;
 
 
-    private static final int MOV_COUNTS = 2;
-    private static final int MOV_THRESHOLD = 3;
+    private static final int MOV_COUNTS = 3;
+    private static final int MOV_THRESHOLD = 4;
     private static final float ALPHA = 0.8F;
     private static final int SHAKE_WINDOW_TIME_INTERVAL = 400; // milliseconds
     private static final long PAUSE = 800L; // milliseconds of pause between shakes
@@ -66,12 +66,13 @@ public class ShakeEventManager implements SensorEventListener {
                 }
                 Log.d("SwA", "Mov counter [" + counter + "]");
             }
-        } else if (counter >= MOV_COUNTS) {
-            if (listener != null)
-                listener.onShake();
-            resetAllData();
-            pauseStartTime = System.currentTimeMillis();
-            Log.d("SwA", "Pause start: " + PAUSE);
+            if (counter >= MOV_COUNTS) {
+                if (listener != null)
+                    listener.onShake();
+                resetAllData();
+                pauseStartTime = System.currentTimeMillis();
+                Log.d("SwA", "Pause start: " + PAUSE);
+            }
         }
     }
 
