@@ -21,7 +21,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 
-import android.widget.TextView
+import kotlinx.android.synthetic.main.fragment_coin_shaker.*
 import kotlinx.android.synthetic.main.fragment_cube_shaker.*
 import kotlinx.android.synthetic.main.fragment_history.*
 
@@ -29,7 +29,7 @@ import pl.rozen.msid.cubeshaker.R
 import pl.rozen.msid.cubeshaker.listeners.ShakeEventManager
 import java.util.*
 import kotlin.collections.ArrayList
-
+import org.jetbrains.anko.*
 
 class CubeShakerActivity : AppCompatActivity(), ShakeEventManager.ShakeListener {
 
@@ -102,6 +102,7 @@ class CubeShakerActivity : AppCompatActivity(), ShakeEventManager.ShakeListener 
                 return true
             }
             R.id.action_about -> {
+                startActivity<AboutActivity>()
                 return true
             }
             R.id.action_settings -> {
@@ -110,7 +111,6 @@ class CubeShakerActivity : AppCompatActivity(), ShakeEventManager.ShakeListener 
             else -> return super.onOptionsItemSelected(item)
         }
     }
-
 
 
     class HistoryFragment : Fragment() {
@@ -162,7 +162,6 @@ class CubeShakerActivity : AppCompatActivity(), ShakeEventManager.ShakeListener 
 
         val random = Random()
         var sides: Int = 6
-        lateinit var tv: TextView
         val colors: List<Int> = listOf(Color.BLUE, Color.CYAN, Color.BLACK, Color.DKGRAY, Color.GREEN, Color.MAGENTA, Color.RED)
 
         override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
@@ -214,30 +213,26 @@ class CubeShakerActivity : AppCompatActivity(), ShakeEventManager.ShakeListener 
 
         val random = Random()
         var sides: Int = 6
-        lateinit var tv: TextView
-        val colors: List<Int> = listOf(Color.BLUE, Color.CYAN, Color.BLACK, Color.DKGRAY, Color.GREEN, Color.MAGENTA, Color.RED)
 
         override fun onCreateView(inflater: LayoutInflater?, container: ViewGroup?,
                                   savedInstanceState: Bundle?): View? {
-            return LayoutInflater.from(context).inflate(R.layout.fragment_cube_shaker, container, false)
+            return LayoutInflater.from(context).inflate(R.layout.fragment_coin_shaker, container, false)
         }
 
         override fun onActivityCreated(savedInstanceState: Bundle?) {
             super.onActivityCreated(savedInstanceState)
             sides = arguments.getInt(ARG_SECTION_NUMBER)
-            section_label.text = getString(R.string.section_format, sides)
-            random_result.visibility = View.GONE
+            coin_iv.visibility = View.GONE
         }
 
-        private fun toss() = random.nextInt(sides) + 1
-        private fun randomColor() = colors[random.nextInt(colors.size)]
+        private fun toss() = random.nextBoolean()
 
         override fun update(): String {
             val nextResult = toss()
-            val result = nextResult.toString()
-            random_result.text = result
-            random_result.setTextColor(randomColor())
-            random_result.visibility = View.VISIBLE
+            val result = if (nextResult) getString(R.string.coin_head_label) else getString(R.string.coin_tail_label)
+            val imageRes = if (nextResult) R.drawable.coin_head else R.drawable.coin_tail
+            coin_iv.imageResource = imageRes
+            coin_iv.visibility = View.VISIBLE
             return result
         }
 
